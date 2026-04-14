@@ -1,0 +1,59 @@
+name: Orders Table Completeness Check
+description: Ensure no critical fields are null in orders table
+version: 1.0
+
+datasource:
+  id: 1
+  type: postgresql
+  host: db.example.com
+  port: 5432
+  database: production
+  username: readonly_user
+  password: ${DB_PASSWORD}
+
+target:
+  table: orders
+
+schedule: "0 */4 * * *"  # Every 4 hours
+
+rules:
+  - name: order_id_not_null
+    description: Order ID must never be null
+    type: completeness
+    column: order_id
+    threshold: 100.0
+    severity: critical
+
+  - name: customer_id_not_null
+    description: Customer ID must not be null
+    type: completeness
+    column: customer_id
+    threshold: 99.5
+    severity: warning
+
+  - name: amount_range_check
+    description: Order amount must be positive and reasonable
+    type: accuracy
+    column: amount
+    min: 0.01
+    max: 100000.00
+    threshold: 99.0
+    severity: warning
+
+  - name: created_at_recent
+    description: Orders must be loaded within 24 hours
+    type: timeliness
+    column: created_at
+    max_delay_hours: 24
+    severity: error
+
+alert:
+  channels:
+    - type: email
+      recipients:
+        - data-team@example.com
+    - type: slack
+      webhook: ${SLACK_WEBHOOK_URL}
+      channel: "#data-alerts"
+  severity_threshold: warning
+  throttle_minutes: 60  # Don't send duplicate alerts within 1 hour
