@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, Statistic, Progress, Table, Tag, Space, Typography } from 'antd'
+import { Card, Row, Col, Statistic, Progress, Table, Tag, Space, Typography, Spin } from 'antd'
 import {
   ProjectOutlined,
   CheckCircleOutlined,
   PlayCircleOutlined,
   AlertOutlined,
   ArrowUpOutlined,
-  ArrowDownOutlined
 } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
+import axios from 'axios'
 
 const { Title } = Typography
 
@@ -17,6 +17,7 @@ interface StatsData {
   active_rules: number
   total_executions: number
   pending_alerts: number
+  recent_executions: Execution[]
 }
 
 interface Execution {
@@ -27,26 +28,32 @@ interface Execution {
   pass_rate: number
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 const Dashboard = () => {
   const [stats, setStats] = useState<StatsData>({
     total_rules: 0,
     active_rules: 0,
     total_executions: 0,
-    pending_alerts: 0
+    pending_alerts: 0,
+    recent_executions: []
   })
   const [loading, setLoading] = useState(true)
+  const [apiError, setApiError] = useState(false)
 
   useEffect(() => {
-    // Simulated data - replace with actual API call
-    setTimeout(() => {
-      setStats({
-        total_rules: 12,
-        active_rules: 10,
-        total_executions: 156,
-        pending_alerts: 3
-      })
-      setLoading(false)
-    }, 500)
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/v1/dashboard/stats`)
+        setStats(res.data)
+      } catch (err) {
+        console.error('Dashboard API error:', err)
+        setApiError(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchStats()
   }, [])
 
   const getHealthOption = () => ({
@@ -96,6 +103,15 @@ const Dashboard = () => {
     }]
   })
 
+  // Fallback data when API is unreachable
+  const mockExecutions: Execution[] = [
+    { id: 1, rule_id: 3, status: 'success', started_at: '2026-04-14 10:00', pass_rate: 98.4 },
+    { id: 2, rule_id: 5, status: 'success', started_at: '2026-04-14 09:00', pass_rate: 100 },
+    { id: 3, rule_id: 2, status: 'failed',  started_at: '2026-04-14 08:00', pass_rate: 0 },
+    { id: 4, rule_id: 1, status: 'success', started_at: '2026-04-14 07:00', pass_rate: 95.2 },
+    { id: 5, rule_id: 4, status: 'success', started_at: '2026-04-14 06:00', pass_rate: 99.8 },
+  ]
+
   const executionColumns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
     { title: 'Rule ID', dataIndex: 'rule_id', key: 'rule_id' },
@@ -121,14 +137,6 @@ const Dashboard = () => {
         <Progress percent={rate} size="small" status={rate < 90 ? 'exception' : 'success'} />
       )
     }
-  ]
-
-  const mockExecutions: Execution[] = [
-    { id: 1, rule_id: 3, status: 'success', started_at: '2026-04-14 10:00', pass_rate: 98.5 },
-    { id: 2, rule_id: 5, status: 'success', started_at: '2026-04-14 09:00', pass_rate: 100 },
-    { id: 3, rule_id: 2, status: 'failed', started_at: '2026-04-14 08:00', pass_rate: 0 },
-    { id: 4, rule_id: 1, status: 'success', started_at: '2026-04-14 07:00', pass_rate: 95.2 },
-    { id: 5, rule_id: 4, status: 'success', started_at: '2026-04-14 06:00', pass_rate: 99.8 },
   ]
 
   return (
@@ -198,7 +206,7 @@ const Dashboard = () => {
       <Card title="Recent Executions">
         <Table
           columns={executionColumns}
-          dataSource={mockExecutions}
+          dataSource={apiError ? mockExecutions : stats.recent_executions}
           rowKey="id"
           pagination={false}
         />

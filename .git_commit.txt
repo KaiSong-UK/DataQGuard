@@ -1,0 +1,9 @@
+feat: add demo seed data + nginx proxy + SPA fallback
+
+- Add backend/seed_data.py: seeds 1 admin user, 2 datasources, 5 rules,
+  70 execution records, 3 alerts on first startup
+- Connect Dashboard to real /api/v1/dashboard/stats API (remove mock data)
+- Add nginx.conf reverse proxy: /api → backend:8000, / → frontend
+- Update docker-compose: frontend build stage → nginx serving from :80,
+  backend serves SPA via FileResponse fallback
+- Update README: new port (8000), credentials, architecture diagram

@@ -43,7 +43,7 @@ services:
     volumes:
       - redis_data:/data
 
-  # Backend API
+  # Backend API + Frontend static files
   backend:
     build:
       context: ./backend
@@ -64,8 +64,11 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - frontend_dist:/app/frontend_dist
     command: >
-      sh -c "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "cd /app/frontend_dist || true
+             && python seed_data.py
+             && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 
   # Celery Worker
   celery:
@@ -85,6 +88,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - frontend_dist:/app/frontend_dist
     command: celery -A core.celery_config worker --loglevel=info
 
   # Celery Beat (scheduler)
@@ -102,17 +106,16 @@ services:
       - ./backend:/app
     command: celery -A core.celery_config beat --loglevel=info
 
-  # Frontend
+  # Build frontend & output to named volume
   frontend:
     image: node:18-alpine
     working_dir: /app
-    ports:
-      - "3000:3000"
     environment:
-      VITE_API_URL: http://localhost:8000
+      VITE_API_URL: /api
     volumes:
       - ./frontend:/app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+      - frontend_dist:/app/dist
+    command: sh -c "npm install && npm run build"
     depends_on:
       - backend
 
@@ -120,3 +123,4 @@ volumes:
   postgres_data:
   clickhouse_data:
   redis_data:
+  frontend_dist:
