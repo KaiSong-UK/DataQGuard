@@ -1,11 +1,11 @@
 import asyncio
 from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
 
 from core.celery_config import celery_app
 from core.database import async_session
-from models.models import Rule, RuleExecution, Datasource
+from models.models import Datasource, Rule, RuleExecution
 from services.rule_engine import RuleEngine
 
 
