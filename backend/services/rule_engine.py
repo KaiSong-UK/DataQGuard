@@ -1,8 +1,9 @@
-import asyncpg
-import pandas as pd
-from typing import Dict, Any
+from datetime import UTC
+from typing import Any
 
-from models.models import Rule, Datasource
+import asyncpg
+
+from models.models import Datasource, Rule
 
 
 class RuleEngine:
@@ -13,7 +14,7 @@ class RuleEngine:
     def _build_connection_string(self) -> str:
         return f"postgresql://{self.datasource.username}:{self.datasource.password}@{self.datasource.host}:{self.datasource.port}/{self.datasource.database}"
     
-    async def execute_rule(self, rule: Rule) -> Dict[str, Any]:
+    async def execute_rule(self, rule: Rule) -> dict[str, Any]:
         """Execute a rule and return results"""
         conn = await asyncpg.connect(self.connection_string)
         
@@ -31,7 +32,7 @@ class RuleEngine:
         finally:
             await conn.close()
     
-    async def _check_completeness(self, conn: asyncpg.Connection, rule: Rule) -> Dict[str, Any]:
+    async def _check_completeness(self, conn: asyncpg.Connection, rule: Rule) -> dict[str, Any]:
         """Check for null values in specified columns"""
         config = rule.rule_config
         columns = config.get("columns", [])
@@ -62,7 +63,7 @@ class RuleEngine:
             "details": results
         }
     
-    async def _check_accuracy(self, conn: asyncpg.Connection, rule: Rule) -> Dict[str, Any]:
+    async def _check_accuracy(self, conn: asyncpg.Connection, rule: Rule) -> dict[str, Any]:
         """Check value ranges and formats"""
         config = rule.rule_config
         column = config.get("column")
@@ -100,7 +101,7 @@ class RuleEngine:
             }
         }
     
-    async def _check_uniqueness(self, conn: asyncpg.Connection, rule: Rule) -> Dict[str, Any]:
+    async def _check_uniqueness(self, conn: asyncpg.Connection, rule: Rule) -> dict[str, Any]:
         """Check for duplicate values"""
         config = rule.rule_config
         columns = config.get("columns", [])
@@ -133,7 +134,7 @@ class RuleEngine:
             }
         }
     
-    async def _check_timeliness(self, conn: asyncpg.Connection, rule: Rule) -> Dict[str, Any]:
+    async def _check_timeliness(self, conn: asyncpg.Connection, rule: Rule) -> dict[str, Any]:
         """Check data freshness"""
         config = rule.rule_config
         column = config.get("column")
@@ -143,8 +144,8 @@ class RuleEngine:
         latest_query = f"SELECT MAX({column}) FROM {rule.table_name}"
         latest_ts = await conn.fetchval(latest_query)
         
-        from datetime import datetime, timezone
-        now = datetime.now(timezone.utc)
+        from datetime import datetime
+        now = datetime.now(UTC)
         
         if latest_ts:
             if isinstance(latest_ts, str):

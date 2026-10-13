@@ -1,7 +1,7 @@
+
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from models.models import RuleExecution
