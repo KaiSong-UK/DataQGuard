@@ -1,8 +1,8 @@
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 from pydantic import BaseModel
-from typing import List, Optional
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from models.models import Datasource
@@ -18,7 +18,7 @@ class DatasourceCreate(BaseModel):
     database: str
     username: str
     password: str
-    ssl_mode: Optional[str] = "prefer"
+    ssl_mode: str | None = "prefer"
 
 
 class DatasourceResponse(BaseModel):
@@ -37,7 +37,7 @@ class DatasourceResponse(BaseModel):
         from_attributes = True
 
 
-@router.get("/", response_model=List[DatasourceResponse])
+@router.get("/", response_model=list[DatasourceResponse])
 async def list_datasources(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Datasource))
     datasources = result.scalars().all()

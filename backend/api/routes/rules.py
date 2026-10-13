@@ -1,8 +1,9 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from models.models import Rule, RuleExecution
@@ -12,11 +13,11 @@ router = APIRouter()
 
 class RuleCreate(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     datasource_id: int
     table_name: str
     rule_type: str  # completeness, accuracy, consistency, timeliness, uniqueness
-    rule_config: Dict[str, Any]
+    rule_config: dict[str, Any]
     schedule: str = "0 */4 * * *"
     is_active: bool = True
 
@@ -24,11 +25,11 @@ class RuleCreate(BaseModel):
 class RuleResponse(BaseModel):
     id: int
     name: str
-    description: Optional[str]
+    description: str | None
     datasource_id: int
     table_name: str
     rule_type: str
-    rule_config: Dict[str, Any]
+    rule_config: dict[str, Any]
     schedule: str
     is_active: bool
     created_at: str
@@ -37,7 +38,7 @@ class RuleResponse(BaseModel):
         from_attributes = True
 
 
-@router.get("/", response_model=List[RuleResponse])
+@router.get("/", response_model=list[RuleResponse])
 async def list_rules(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Rule))
     rules = result.scalars().all()
