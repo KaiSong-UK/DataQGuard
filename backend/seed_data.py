@@ -3,17 +3,18 @@ DataQGuard - Database seeding script
 Creates demo data on first startup for a visually impressive demo.
 """
 import asyncio
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-from core.database import engine, async_session, Base
+
+from core.database import async_session
 from core.security import get_password_hash
-from models.models import User, Datasource, Rule, RuleExecution, Alert
-from datetime import datetime, timedelta, timezone
+from models.models import Alert, Datasource, Rule, RuleExecution, User
 
 
 async def seed_database():
@@ -148,7 +149,7 @@ async def seed_database():
         print(f"✅ Created {len(rules)} demo rules")
 
         # 4. Create historical execution records (last 7 days)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         exec_statuses = ["success", "success", "success", "failed"]
         exec_pass_rates = [98.4, 100, 95.2, 0, 99.8, 97.3, 98.1, 99.5, 96.8, 100]
 
