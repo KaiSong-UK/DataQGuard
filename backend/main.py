@@ -1,14 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
-from contextlib import asynccontextmanager
 import os
+from contextlib import asynccontextmanager
 
-from api.routes import auth, datasources, rules, executions, alerts, dashboard
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse
+
+from api.routes import alerts, auth, dashboard, datasources, executions, rules
 from core.database import init_db
-from core.config import settings
-
 
 FRONTEND_DIST = os.environ.get("FRONTEND_DIST", "/app/frontend_dist")
 
@@ -16,7 +14,6 @@ FRONTEND_DIST = os.environ.get("FRONTEND_DIST", "/app/frontend_dist")
 async def seed_if_needed():
     """Run seed script if database is empty. Safe to call on every startup."""
     try:
-        import asyncio
         from seed_data import seed_database
         await seed_database()
     except Exception as e:
@@ -30,7 +27,6 @@ async def lifespan(app: FastAPI):
     await seed_if_needed()
     yield
     # Shutdown
-    pass
 
 
 app = FastAPI(
